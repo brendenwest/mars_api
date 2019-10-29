@@ -16,18 +16,28 @@ app.get('/news', (req,res, next) => {
     const url = "https://www.marssociety.org/news/"
 
     https.get(url, (response) => {
-        // const articles = [];
+        let articles = [];
         // { title: "", image_url: "", description: "", url: ""}
 
         // Continuously update stream with data
-        var body = '';
+        let body = '';
         response.on('data', (d) => {
             body += d;
         });
 
         response.on('end', () => {
-            console.log(body)
             $ = cheerio.load(body);
+            $('article').each((index, element) => {
+                let title = $(element).find(".entry-title").text()
+                let image_src = $(element).find("img").attr("src")
+                let description = $(element).find(".entry-content p").text()
+                let url = $(element).find(".tms2020-read-more-link").attr("href")
+                let pubdate = $(element).find("time").text()
+                articles.push(
+                  { title, image_src, description, url, pubdate}
+                )
+            });
+            res.json(articles);
         })
     }).end();
 
