@@ -1,19 +1,19 @@
-
+const cheerio = require('cheerio');
+const https = require('https');
 const express = require("express");
 const app = express();
 
 app.set("port", process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public')); // allows direct navigation to static files
 
+const BASE_URL = "https://www.marssociety.org/"
+
 app.get('/', (req,res) => {
     res.send('home');
 });
 
-app.get('/news', (req,res, next) => {
-    console.log('get mars news')
-    const cheerio = require('cheerio');
-    const https = require('https');
-    const url = "https://www.marssociety.org/news/"
+app.get('/:section', (req,res, next) => {
+    const url = `${BASE_URL}${req.params.section}/`
 
     https.get(url, (response) => {
         let articles = [];
@@ -29,7 +29,7 @@ app.get('/news', (req,res, next) => {
             $ = cheerio.load(body);
             $('article').each((index, element) => {
                 let title = $(element).find(".entry-title").text()
-                let image_src = $(element).find("img").attr("src")
+                let image_src = $(element).find("img").attr("data-src")
                 let description = $(element).find(".entry-content p").text()
                 let url = $(element).find(".tms2020-read-more-link").attr("href")
                 let pubdate = $(element).find("time").text()
@@ -40,18 +40,15 @@ app.get('/news', (req,res, next) => {
             res.json(articles);
         })
     }).end();
-
 });
 
-
-
 // define 404 handler
-app.use(function(req,res) {
+app.use((req,res) => {
     res.type('text/plain');
     res.status(404);
     res.send('404 - Not found');
 });
 
-app.listen(app.get('port'), function() {
+app.listen(app.get('port'), () => {
     console.log('Express started');
 });
